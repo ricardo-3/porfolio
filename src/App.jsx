@@ -48,8 +48,7 @@ const css = `
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap');
 
 *{margin:0;padding:0;box-sizing:border-box}
-html{background:#2b44c0;overflow-x:hidden}
-body{margin:0;padding:0;overflow-x:hidden;background:inherit}
+html,body{margin:0 !important;padding:0 !important;overflow-x:hidden !important;min-height:100%}
 ::selection{background:rgba(255,255,255,0.18)}
 
 .site{
@@ -69,7 +68,7 @@ body{margin:0;padding:0;overflow-x:hidden;background:inherit}
   transition:background .35s;
 }
 .nav-inner{
-  max-width:1080px;margin:0 auto;height:100%;
+  max-width:960px;margin:0 auto;height:100%;
   display:flex;align-items:center;justify-content:space-between;
   padding:0 48px;
 }
@@ -80,7 +79,7 @@ body{margin:0;padding:0;overflow-x:hidden;background:inherit}
 }
 .nav-center{display:flex;gap:28px;align-items:center}
 .nav-link{
-  font-size:13px;font-weight:500;
+  font-size:11px;font-weight:500;
   letter-spacing:.08em;text-transform:uppercase;
   color:var(--t2);cursor:pointer;
   background:none;border:none;font-family:inherit;
@@ -139,11 +138,11 @@ body{margin:0;padding:0;overflow-x:hidden;background:inherit}
 /* ═══ LAYOUT ════════════════════════════════════════ */
 .wrap{
   max-width:680px;margin:0 auto;
-  padding:0 48px;
+  padding:0 48px;text-align:left;
 }
 .wrap-wide{
   max-width:960px;margin:0 auto;
-  padding:0 48px;
+  padding:0 48px;text-align:left;
 }
 @media(max-width:768px){
   .wrap,.wrap-wide{padding:0 20px}
@@ -154,7 +153,7 @@ body{margin:0;padding:0;overflow-x:hidden;background:inherit}
   min-height:100vh;
   display:flex;flex-direction:column;
   justify-content:center;align-items:center;
-  padding:100px 48px 80px;
+  padding:128px 48px 80px;
   text-align:center;
 }
 .home-label{
@@ -177,11 +176,11 @@ body{margin:0;padding:0;overflow-x:hidden;background:inherit}
   font-style:italic;color:var(--t2);
 }
 @media(max-width:768px){
-  .home{padding:80px 20px 60px}
+  .home{padding:100px 20px 60px}
 }
 
 /* ═══ PAGE SECTIONS ═════════════════════════════════ */
-.pg{padding:100px 0 80px;min-height:100vh}
+.pg{padding:128px 0 80px;min-height:100vh}
 .pg-head{
   display:flex;align-items:baseline;gap:12px;
   margin-bottom:56px;padding-bottom:16px;
@@ -244,7 +243,7 @@ body{margin:0;padding:0;overflow-x:hidden;background:inherit}
 /* ── Blog post ── */
 .post{
   max-width:680px;margin:0 auto;
-  padding:100px 48px 80px;
+  padding:128px 48px 80px;
 }
 .post-back{
   display:inline-flex;align-items:center;gap:6px;
@@ -294,10 +293,10 @@ body{margin:0;padding:0;overflow-x:hidden;background:inherit}
   font-size:11px;font-weight:400;letter-spacing:.04em;
   padding:6px 14px;border:1px solid var(--border);color:var(--t2);
 }
-@media(max-width:768px){.post{padding:90px 20px 60px}}
+@media(max-width:768px){.post{padding:100px 20px 60px}}
 
 /* ═══ ABOUT ═════════════════════════════════════════ */
-.about-layout{}
+.about-layout{text-align:left}
 .about-layout>p{
   font-size:16px;font-weight:400;line-height:1.85;
   color:var(--t2);margin-bottom:24px;
@@ -983,8 +982,12 @@ export default function App() {
 
   useEffect(() => {
     const bg = theme === "light" ? BLUE : DARK;
-    document.documentElement.style.background = bg;
-    document.body.style.background = bg;
+    document.documentElement.style.setProperty("background", bg, "important");
+    document.body.style.setProperty("background", bg, "important");
+    document.body.style.setProperty("margin", "0", "important");
+    document.body.style.setProperty("padding", "0", "important");
+    // Update page title
+    document.title = "rrr—";
   }, [theme]);
 
   return (
