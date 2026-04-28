@@ -49,6 +49,7 @@ const css = `
 
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{margin:0 !important;padding:0 !important;overflow-x:hidden !important;min-height:100%}
+#root{max-width:none !important;padding:0 !important;margin:0 !important;text-align:left !important;width:100% !important}
 ::selection{background:rgba(255,255,255,0.18)}
 
 .site{
@@ -986,7 +987,15 @@ export default function App() {
     document.body.style.setProperty("background", bg, "important");
     document.body.style.setProperty("margin", "0", "important");
     document.body.style.setProperty("padding", "0", "important");
-    // Update page title
+    document.body.style.setProperty("display", "block", "important");
+    const root = document.getElementById("root");
+    if (root) {
+      root.style.setProperty("max-width", "none", "important");
+      root.style.setProperty("padding", "0", "important");
+      root.style.setProperty("margin", "0", "important");
+      root.style.setProperty("text-align", "left", "important");
+      root.style.setProperty("width", "100%", "important");
+    }
     document.title = "rrr—";
   }, [theme]);
 
