@@ -357,6 +357,7 @@ html,body{margin:0 !important;padding:0 !important;overflow-x:hidden !important;
   outline:1px solid rgba(255,255,255,0.12);
   outline-offset:-1px;
 }
+.work-card > *{position:relative;z-index:1}
 .work-card:hover{background:rgba(255,255,255,0.06)}
 .work-card-num{
   font-size:11px;font-weight:400;color:var(--t2);
@@ -392,6 +393,7 @@ html,body{margin:0 !important;padding:0 !important;overflow-x:hidden !important;
   max-width:640px;width:100%;
   max-height:90vh;overflow-y:auto;
   position:relative;
+  padding-top:8px;
   animation:modalUp .3s ease forwards;
 }
 @keyframes modalUp{
@@ -399,7 +401,7 @@ html,body{margin:0 !important;padding:0 !important;overflow-x:hidden !important;
   to{opacity:1;transform:translateY(0)}
 }
 .modal-close{
-  position:absolute;top:16px;right:20px;z-index:1;
+  position:absolute;top:12px;right:18px;z-index:999;
   font-size:18px;color:var(--t2);
   background:none;border:none;cursor:pointer;
   font-family:inherit;transition:color .2s;
@@ -410,12 +412,16 @@ html,body{margin:0 !important;padding:0 !important;overflow-x:hidden !important;
   background:var(--card);
   display:flex;align-items:center;justify-content:center;
   overflow:hidden;
+  max-height:50vh;
 }
 .modal-img-placeholder{
   font-size:13px;font-weight:400;color:var(--t2);
   text-align:center;line-height:1.6;
 }
 .modal-body{padding:32px}
+.modal-cover-img{
+  width:100%;height:100%;max-height:calc(50vh - 16px);object-fit:contain;display:block;
+}
 .modal-cat{
   font-size:11px;font-weight:500;letter-spacing:.1em;
   text-transform:uppercase;color:var(--t2);margin-bottom:8px;
@@ -825,12 +831,10 @@ function Work() {
    * cover: null muestra placeholder, o poné "https://tu-imagen.jpg"
    */
   const projects = [
-    { cat: "Branding", title: "Studio Nórdico — Identidad", cover: null, desc: "Desarrollo de identidad visual completa para un estudio de diseño escandinavo. El proyecto incluyó logotipo, paleta cromática, tipografía, papelería y guía de marca.", tags: ["Identidad", "Logotipo", "Guidelines"] },
-    { cat: "Editorial", title: "Revista Materia N°04", cover: null, desc: "Diseño editorial de la cuarta edición de Revista Materia, una publicación independiente sobre arte y cultura contemporánea. 120 páginas, formato A4.", tags: ["Editorial", "Print", "Layout"] },
-    { cat: "Dirección de Arte", title: "Estación Sur — Campaña", cover: null, desc: "Dirección de arte para la campaña visual de temporada. Fotografía, composición y adaptación a formatos digitales e impresos.", tags: ["Campaña", "Fotografía", "Digital"] },
-    { cat: "Tipografía", title: "Sistema Tipográfico Clave", cover: null, desc: "Diseño de un sistema tipográfico modular para uso en interfaces y piezas editoriales. Incluye 4 pesos y variantes itálicas.", tags: ["Type Design", "Sistema", "Variable"] },
-    { cat: "UI / UX", title: "Plataforma Onda", cover: null, desc: "Diseño de interfaz y experiencia de usuario para una plataforma de streaming de música independiente. Investigación, wireframes y diseño final.", tags: ["UI", "UX", "Product"] },
-    { cat: "Moda", title: "Colección Cápsula SS26", cover: null, desc: "Dirección creativa para la colección cápsula de primavera-verano 2026. Concepto visual, lookbook y comunicación de marca.", tags: ["Moda", "Lookbook", "Concepto"] },
+    { cat: "UI / UX", title: "VAM — Virtual Assistant for Merchandising", cover: "images/vam.png", desc: "App que estandariza y centraliza el Visual Merchandising en retail de moda. Elimina reportes manuales, asegura trazabilidad y alinea a los equipos. Rol: Diseño UX/UI end-to-end. Proceso: 10 entrevistas en profundidad con visual merchandisers y encargados de tienda → insight: falta de visibilidad y desalineación entre lineamientos visuales y objetivos de venta. Entregables: user personas, user flow (Login → Home → Zonas/Tiendas → Reporte → Fotos/Checklist/Notas → Enviar), wireframes. Solución: reporte estructurado (fotos + checklist + notas), trazabilidad por zona y tienda, lineamientos y capacitación en tiempo real. UI: Inter, paleta #E5FF73 (acento), #F4F5EF (off-white), #000301. Estado: en uso real en Barcelona (producto privado). Se puede hablar del proceso y aprendizajes, NO de datos internos ni capturas no públicas.", tags: ["UX","Research","Enterprise"] },
+    { cat: "UI / UX", title: "HairScope — Análisis Capilar con IA", cover: "images/hairscope.png", desc: "App (MVP/hackatón) que mide la salud del cabello en 60s con IA desde el celular. Flujo en 3 pasos: 1) selfie con luz natural; 2) IA evalúa densidad, grosor, cuero cabelludo y patrones de caída; 3) diagnóstico con score (ej. 72/100) y recomendaciones personalizadas. Doble audiencia: usuarios finales y profesionales. Incluye landing y experiencia de producto. Prueba social: testimonios de usuaria (Buenos Aires), dermatólogo (CDMX) y directora de clínica (Bogotá). UI: estética cálida y editorial (verdes naturales + crema, tipografía serif). Estado: hackatón — pieza de portfolio que demuestra pasar de problema a producto en tiempo reducido.", tags: ["MVP","IA","Mobile"] },
+    { cat: "UI / UX", title: "Residencia Amanecer — Gestión Geriátrica", cover: "images/residencia-amanecer.png", desc: "Software de gestión para residencias geriátricas que centraliza pacientes, familiares, medicamentos e historia clínica. Funcionalidades clave: dashboard con métricas (pacientes activos, medicamentos que requieren atención), módulo de Medicamentos (dosis, frecuencia, stock restante, fecha estimada de agotamiento) y sistema de alertas en tres niveles (urgente ≤2d, alerta, próximos ≤10d) con envío de aviso por WhatsApp al familiar responsable y registro histórico. Impacto: reducir errores de medicación y evitar quiebres de stock. UI: sidebar oscuro (navy/violeta), área de contenido clara y pills de estado por color. Estado: en uso real/producción.", tags: ["Healthcare","Dashboard","Alerts"] },
+    { cat: "Branding / Web", title: "NAN — Agencia de Marketing Digital", cover: "images/nan.png", desc: "Proyecto propio: creador y diseñador de la marca y el sitio. NAN es una agencia enfocada en ecosistemas de crecimiento: growth marketing, paid media (Meta, Google, TikTok), UX/UI engineering y analítica avanzada. Diseñé identidad, dirección de arte y el sitio completo, con módulos de IA (AI Summarizer, Growth Roadmap) y un sistema visual de alto contraste. Sitio: nanestudio.art.", tags: ["Branding","Web","AI"] },
   ];
 
   const [selected, setSelected] = useState(null);
@@ -865,7 +869,7 @@ function Work() {
             {/* Imagen de portada */}
             <div className="modal-img">
               {selected.cover ? (
-                <img src={selected.cover} alt={selected.title} style={{width:"100%",height:"100%",objectFit:"cover"}} />
+                <img src={selected.cover} alt={selected.title} className="modal-cover-img" />
               ) : (
                 <div className="modal-img-placeholder">
                   CAMBIAR ACÁ POR IMG<br />
@@ -882,6 +886,11 @@ function Work() {
               {selected.tags && (
                 <div className="modal-tags">
                   {selected.tags.map(t => <span key={t} className="modal-tag">{t}</span>)}
+                </div>
+              )}
+              {selected.pdf && (
+                <div className="modal-pdf" style={{marginTop:12}}>
+                  <a href={selected.pdf} target="_blank" rel="noreferrer" className="modal-pdf-link">Ver PDF del proyecto ↗</a>
                 </div>
               )}
             </div>
