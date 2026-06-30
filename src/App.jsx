@@ -3,6 +3,8 @@ import { useState, useEffect, useCallback } from "react";
 const PAGES = ["Inicio", "Portfolio", "Sobre Mí", "Blog", "Contacto"];
 const BLUE = "#2b44c0";
 const DARK = "#0f0f0f";
+const BASE_URL = import.meta.env.BASE_URL;
+const imagePath = (name) => `${BASE_URL}images/${name}`;
 
 /*
  * ── DESIGN SYSTEM ──────────────────────────────────
@@ -589,7 +591,7 @@ const BLOG_POSTS = [
     date: "04 — 2026",
     title: "La curiosidad como motor creativo",
     excerpt: "Reflexiones sobre por qué la curiosidad genuina produce mejor trabajo que la disciplina forzada.",
-    cover: "images/blog-cover-1.jpg", // ← guarda la imagen en public/images/blog-cover-1.jpg
+    cover: imagePath("blog-cover-1.jpg"), // ← guarda la imagen en public/images/blog-cover-1.jpg
     tags: ["Creatividad", "Proceso"],
     body: [
       { type: "p", text: "La curiosidad es el combustible más honesto del proceso creativo. No necesita justificación, no pide permiso, simplemente aparece y te empuja hacia algo que todavía no entendés del todo." },
@@ -604,7 +606,7 @@ const BLOG_POSTS = [
     date: "03 — 2026",
     title: "Menos decisiones, más intención",
     excerpt: "Cómo simplificar el proceso de diseño eliminando lo innecesario y manteniendo solo lo que tiene propósito.",
-    cover: "images/portada2.png",
+    cover: imagePath("portada2.png"),
     tags: ["Diseño", "Minimalismo"],
     body: [
       { type: "p", text: "Cada decisión de diseño consume energía. Cada opción que dejás abierta es una pregunta sin resolver que te distrae de lo esencial. Simplificar no es quitar — es elegir con más intención." },
@@ -618,7 +620,7 @@ const BLOG_POSTS = [
     date: "02 — 2026",
     title: "El silencio visual en la composición",
     excerpt: "El espacio vacío no es ausencia — es una declaración. Notas sobre el uso consciente del espacio negativo.",
-    cover: "images/portada3.png",
+    cover: imagePath("portada3.png"),
     tags: ["Composición", "Espacio"],
     body: [
       { type: "p", text: "En música, el silencio entre las notas es tan importante como las notas mismas. En diseño, pasa exactamente lo mismo. El espacio que dejás vacío no es desperdicio — es oxígeno para la composición." },
@@ -632,7 +634,7 @@ const BLOG_POSTS = [
     date: "01 — 2026",
     title: "Apuntes sobre tipografía y emoción",
     excerpt: "La tipografía comunica antes de ser leída. El impacto emocional de las decisiones tipográficas.",
-    cover: "images/portada4.png",
+    cover: imagePath("portada4.png"),
     tags: ["Tipografía", "Emoción"],
     body: [
       { type: "p", text: "Antes de leer una sola palabra, la tipografía ya comunicó algo. El peso, el espaciado, la forma de las letras — todo transmite una emoción que precede al contenido." },
@@ -846,10 +848,10 @@ function Work() {
    * cover: null muestra placeholder, o poné "https://tu-imagen.jpg"
    */
   const projects = [
-    { cat: "UI / UX", title: "VAM — Virtual Assistant for Merchandising", cover: "images/vam.png", desc: "App que estandariza y centraliza el Visual Merchandising en retail de moda. Elimina reportes manuales, asegura trazabilidad y alinea a los equipos. Rol: Diseño UX/UI end-to-end. Proceso: 10 entrevistas en profundidad con visual merchandisers y encargados de tienda → insight: falta de visibilidad y desalineación entre lineamientos visuales y objetivos de venta. Entregables: user personas, user flow (Login → Home → Zonas/Tiendas → Reporte → Fotos/Checklist/Notas → Enviar), wireframes. Solución: reporte estructurado (fotos + checklist + notas), trazabilidad por zona y tienda, lineamientos y capacitación en tiempo real. UI: Inter, paleta #E5FF73 (acento), #F4F5EF (off-white), #000301. Estado: en uso real en Barcelona (producto privado). Se puede hablar del proceso y aprendizajes, NO de datos internos ni capturas no públicas.", tags: ["UX","Research","Enterprise"] },
-    { cat: "UI / UX", title: "HairScope — Análisis Capilar con IA", cover: "images/hairscope.png", desc: "App (MVP/hackatón) que mide la salud del cabello en 60s con IA desde el celular. Flujo en 3 pasos: 1) selfie con luz natural; 2) IA evalúa densidad, grosor, cuero cabelludo y patrones de caída; 3) diagnóstico con score (ej. 72/100) y recomendaciones personalizadas. Doble audiencia: usuarios finales y profesionales. Incluye landing y experiencia de producto. Prueba social: testimonios de usuaria (Buenos Aires), dermatólogo (CDMX) y directora de clínica (Bogotá). UI: estética cálida y editorial (verdes naturales + crema, tipografía serif). Estado: hackatón — pieza de portfolio que demuestra pasar de problema a producto en tiempo reducido.", tags: ["MVP","IA","Mobile"] },
-    { cat: "UI / UX", title: "Residencia Amanecer — Gestión Geriátrica", cover: "images/residencia-amanecer.png", desc: "Software de gestión para residencias geriátricas que centraliza pacientes, familiares, medicamentos e historia clínica. Funcionalidades clave: dashboard con métricas (pacientes activos, medicamentos que requieren atención), módulo de Medicamentos (dosis, frecuencia, stock restante, fecha estimada de agotamiento) y sistema de alertas en tres niveles (urgente ≤2d, alerta, próximos ≤10d) con envío de aviso por WhatsApp al familiar responsable y registro histórico. Impacto: reducir errores de medicación y evitar quiebres de stock. UI: sidebar oscuro (navy/violeta), área de contenido clara y pills de estado por color. Estado: en uso real/producción.", tags: ["Healthcare","Dashboard","Alerts"] },
-    { cat: "Branding / Web", title: "NAN — Agencia de Marketing Digital", cover: "images/nan.png", desc: "Proyecto propio: creador y diseñador de la marca y el sitio. NAN es una agencia enfocada en ecosistemas de crecimiento: growth marketing, paid media (Meta, Google, TikTok), UX/UI engineering y analítica avanzada. Diseñé identidad, dirección de arte y el sitio completo, con módulos de IA (AI Summarizer, Growth Roadmap) y un sistema visual de alto contraste. Sitio: nanestudio.art.", tags: ["Branding","Web","AI"] },
+    { cat: "UI / UX", title: "VAM — Virtual Assistant for Merchandising", cover: imagePath("vam.png"), desc: "App que estandariza y centraliza el Visual Merchandising en retail de moda. Elimina reportes manuales, asegura trazabilidad y alinea a los equipos. Rol: Diseño UX/UI end-to-end. Proceso: 10 entrevistas en profundidad con visual merchandisers y encargados de tienda → insight: falta de visibilidad y desalineación entre lineamientos visuales y objetivos de venta. Entregables: user personas, user flow (Login → Home → Zonas/Tiendas → Reporte → Fotos/Checklist/Notas → Enviar), wireframes. Solución: reporte estructurado (fotos + checklist + notas), trazabilidad por zona y tienda, lineamientos y capacitación en tiempo real. UI: Inter, paleta #E5FF73 (acento), #F4F5EF (off-white), #000301. Estado: en uso real en Barcelona (producto privado). Se puede hablar del proceso y aprendizajes, NO de datos internos ni capturas no públicas.", tags: ["UX","Research","Enterprise"] },
+    { cat: "UI / UX", title: "HairScope — Análisis Capilar con IA", cover: imagePath("hairscope.png"), desc: "App (MVP/hackatón) que mide la salud del cabello en 60s con IA desde el celular. Flujo en 3 pasos: 1) selfie con luz natural; 2) IA evalúa densidad, grosor, cuero cabelludo y patrones de caída; 3) diagnóstico con score (ej. 72/100) y recomendaciones personalizadas. Doble audiencia: usuarios finales y profesionales. Incluye landing y experiencia de producto. Prueba social: testimonios de usuaria (Buenos Aires), dermatólogo (CDMX) y directora de clínica (Bogotá). UI: estética cálida y editorial (verdes naturales + crema, tipografía serif). Estado: hackatón — pieza de portfolio que demuestra pasar de problema a producto en tiempo reducido.", tags: ["MVP","IA","Mobile"] },
+    { cat: "UI / UX", title: "Residencia Amanecer — Gestión Geriátrica", cover: imagePath("residencia-amanecer.png"), desc: "Software de gestión para residencias geriátricas que centraliza pacientes, familiares, medicamentos e historia clínica. Funcionalidades clave: dashboard con métricas (pacientes activos, medicamentos que requieren atención), módulo de Medicamentos (dosis, frecuencia, stock restante, fecha estimada de agotamiento) y sistema de alertas en tres niveles (urgente ≤2d, alerta, próximos ≤10d) con envío de aviso por WhatsApp al familiar responsable y registro histórico. Impacto: reducir errores de medicación y evitar quiebres de stock. UI: sidebar oscuro (navy/violeta), área de contenido clara y pills de estado por color. Estado: en uso real/producción.", tags: ["Healthcare","Dashboard","Alerts"] },
+    { cat: "Branding / Web", title: "NAN — Agencia de Marketing Digital", cover: imagePath("nan.png"), desc: "Proyecto propio: creador y diseñador de la marca y el sitio. NAN es una agencia enfocada en ecosistemas de crecimiento: growth marketing, paid media (Meta, Google, TikTok), UX/UI engineering y analítica avanzada. Diseñé identidad, dirección de arte y el sitio completo, con módulos de IA (AI Summarizer, Growth Roadmap) y un sistema visual de alto contraste. Sitio: nanestudio.art.", tags: ["Branding","Web","AI"] },
   ];
 
   const [selected, setSelected] = useState(null);
