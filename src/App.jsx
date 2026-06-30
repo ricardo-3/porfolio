@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 
-const PAGES = ["Inicio", "Trabajo", "Sobre Mí", "Blog", "Contacto"];
+const PAGES = ["Inicio", "Portfolio", "Sobre Mí", "Blog", "Contacto"];
 const BLUE = "#2b44c0";
 const DARK = "#0f0f0f";
 
@@ -198,28 +198,31 @@ html,body{margin:0 !important;padding:0 !important;overflow-x:hidden !important;
 
 /* ═══ BLOG ══════════════════════════════════════════ */
 .blog-grid{
-  display:grid;grid-template-columns:1fr 1fr;gap:0;
+  display:grid;grid-template-columns:1fr 1fr;gap:24px;
 }
 .blog-item{
-  background:transparent;padding:0;
+  background:rgba(255,255,255,0.04);
+  padding:20px;
   cursor:pointer;transition:background .2s;
   overflow:hidden;
   outline:1px solid rgba(255,255,255,0.12);
   outline-offset:-1px;
+  border-radius:3px;
 }
 .blog-item:hover{background:rgba(255,255,255,0.06)}
 .blog-cover{
   width:100%;aspect-ratio:16/10;
-  background:rgba(255,255,255,0.04);
+  background:rgba(255,255,255,0.08);
   display:flex;align-items:center;justify-content:center;
   overflow:hidden;
+  margin-bottom:18px;
 }
-.blog-cover img{width:100%;height:100%;object-fit:cover}
+.blog-cover img{width:100%;height:100%;object-fit:cover;filter:grayscale(100%) brightness(0.95)}
 .blog-cover-placeholder{
   font-size:11px;font-weight:400;color:var(--t2);
-  text-align:center;line-height:1.6;opacity:.6;
+  text-align:center;line-height:1.6;opacity:.7;
 }
-.blog-item-body{padding:24px 28px 28px}
+.blog-item-body{padding:0}
 .blog-date{
   font-size:11px;font-weight:500;letter-spacing:.1em;
   text-transform:uppercase;color:var(--t2);margin-bottom:12px;
@@ -346,38 +349,49 @@ html,body{margin:0 !important;padding:0 !important;overflow-x:hidden !important;
 }
 
 /* ═══ WORK ══════════════════════════════════════════ */
-.work-grid{
-  display:grid;grid-template-columns:repeat(3,1fr);gap:0;
+.portfolio-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:24px;
 }
-.work-card{
-  aspect-ratio:1;background:transparent;
-  display:flex;flex-direction:column;justify-content:space-between;
-  padding:24px;cursor:pointer;position:relative;
-  transition:background .2s;
+.portfolio-item{
+  background:rgba(255,255,255,0.04);
+  padding:20px;
+  cursor:pointer;transition:background .2s;
+  overflow:hidden;
   outline:1px solid rgba(255,255,255,0.12);
   outline-offset:-1px;
+  border-radius:3px;
 }
-.work-card > *{position:relative;z-index:1}
-.work-card:hover{background:rgba(255,255,255,0.06)}
-.work-card-num{
+.portfolio-item:hover{background:rgba(255,255,255,0.06)}
+.portfolio-cover{
+  width:100%;aspect-ratio:16/10;
+  background:rgba(255,255,255,0.08);
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;
+  border-radius:0;
+  margin-bottom:18px;
+}
+.portfolio-cover img{
+  width:100%;height:100%;object-fit:cover;
+  filter:grayscale(100%) brightness(0.95);
+}
+.portfolio-cover-placeholder{
   font-size:11px;font-weight:400;color:var(--t2);
+  text-align:center;line-height:1.6;opacity:.7;
 }
-.work-card-cat{
+.portfolio-item-body{padding:0}
+.portfolio-date{
   font-size:11px;font-weight:500;letter-spacing:.1em;
-  text-transform:uppercase;color:var(--t2);margin-bottom:4px;
+  text-transform:uppercase;color:var(--t2);margin-bottom:12px;
 }
-.work-card-title{
-  font-size:17px;font-weight:500;letter-spacing:-.01em;
-  color:var(--t1);line-height:1.3;
+.portfolio-title{
+  font-size:16px;font-weight:500;letter-spacing:-.01em;
+  color:var(--t1);margin-bottom:8px;line-height:1.4;
 }
-.work-card-arrow{
-  position:absolute;top:20px;right:24px;
-  font-size:16px;color:var(--t1);opacity:0;
-  transition:opacity .2s;
+.portfolio-excerpt{
+  font-size:13px;font-weight:400;color:var(--t2);line-height:1.6;
 }
-.work-card:hover .work-card-arrow{opacity:.4}
-@media(max-width:768px){.work-grid{grid-template-columns:1fr 1fr}}
-@media(max-width:480px){.work-grid{grid-template-columns:1fr}}
+@media(max-width:768px){.portfolio-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.portfolio-grid{grid-template-columns:1fr}}
 
 /* ── Work modal ── */
 .modal-overlay{
@@ -541,14 +555,15 @@ html,body{margin:0 !important;padding:0 !important;overflow-x:hidden !important;
 /* ═══ DATA ══════════════════════════════════════════ */
 
 const POEM = [
-  "Pilotas un esqueleto cubierto de nervios, músculos y carne, montado sobre una roca que contiene su propia atmósfera y genera suficiente oxígeno para que puedas respirar, y atraviesas el espacio infinito a 110.000 km por hora.",
-  "Cada noche abandonas tu cuerpo, alucinas vívidamente durante horas, se miran el uno al otro una y otra vez y se despiertan como si nada hubiera pasado. Están toda la noche y me llaman a dormir, como si no fuera del todo inusual.",
-  "Eres un conjunto de átomos que, de alguna manera, aprendieron a pensar sobre sí mismos; a sentir emociones al tener emociones y a ser conscientes de que son conscientes.",
-  "Fuiste un universo consciente atrapado en un cuerpo temporal durante aproximadamente 80 o 90 años —unas 4.000 semanas—, y pasaste parte de ese tiempo preocupándote de que el correo fuera demasiado largo.",
-  "Mi amor, eres un milagro que la física no puede explicar. Tus átomos se forjaron en el seno de una estrella moribunda; la sangre que corre por tus venas es ancestral, el calcio de tus huesos se creó en una supernova.",
-  "Literalmente estás lleno de estrellas reencarnadas y te preocupa volverte loco.",
-  "Crea esa cosa extraña, di ese pensamiento extraño. Eres ese ser humano desconcertante y contradictorio, como el pulpo de estrellas que realmente eres.",
-  "Ya eres imposible… también podría ser interesante.",
+  "Pilotas un esqueleto hecho de polvo de estrellas, envuelto en músculo y carne, sentado sobre una roca que genera su propia atmósfera y suficiente oxígeno para respirar, mientras atraviesas el espacio a unos 110.000 km por hora.",
+  "Cada noche abandonas tu cuerpo, alucinas vívidamente durante horas, te ves morir una y otra vez, y luego despiertas y a eso lo llamas \"dormir\", como si no fuera nada inusual.",
+  "Eres un conjunto de átomos que, de algún modo, aprendió a pensar sobre sí mismo; a sentir emociones por tener emociones, y a ser consciente de que es consciente.",
+  "Eres un universo consciente atrapado en un cuerpo temporal durante unos 80 o 90 años —unas 4.000 semanas— y pasas parte de ese tiempo preocupándote por si un correo fue demasiado largo.",
+  "Mi amor, eres un milagro que la física no puede explicar.",
+  "Tus átomos se forjaron en el corazón de una estrella moribunda; la sangre de tus venas es ancestral; el calcio de tus huesos se creó en una supernova.",
+  "Estás literalmente lleno de estrellas reencarnadas, y te preocupa volverte loco.",
+  "Haz esa cosa rara. Di ese pensamiento raro. Sé ese ser humano desconcertante y contradictorio que de verdad eres.",
+  "Ya eres imposible… bien podrías ser interesante.",
 ];
 
 /*
@@ -574,7 +589,7 @@ const BLOG_POSTS = [
     date: "04 — 2026",
     title: "La curiosidad como motor creativo",
     excerpt: "Reflexiones sobre por qué la curiosidad genuina produce mejor trabajo que la disciplina forzada.",
-    cover: null, // ← CAMBIAR ACÁ POR URL DE IMAGEN (ej: "https://tu-imagen.jpg")
+    cover: "images/blog-cover-1.jpg", // ← guarda la imagen en public/images/blog-cover-1.jpg
     tags: ["Creatividad", "Proceso"],
     body: [
       { type: "p", text: "La curiosidad es el combustible más honesto del proceso creativo. No necesita justificación, no pide permiso, simplemente aparece y te empuja hacia algo que todavía no entendés del todo." },
@@ -589,7 +604,7 @@ const BLOG_POSTS = [
     date: "03 — 2026",
     title: "Menos decisiones, más intención",
     excerpt: "Cómo simplificar el proceso de diseño eliminando lo innecesario y manteniendo solo lo que tiene propósito.",
-    cover: null,
+    cover: "images/portada2.png",
     tags: ["Diseño", "Minimalismo"],
     body: [
       { type: "p", text: "Cada decisión de diseño consume energía. Cada opción que dejás abierta es una pregunta sin resolver que te distrae de lo esencial. Simplificar no es quitar — es elegir con más intención." },
@@ -603,7 +618,7 @@ const BLOG_POSTS = [
     date: "02 — 2026",
     title: "El silencio visual en la composición",
     excerpt: "El espacio vacío no es ausencia — es una declaración. Notas sobre el uso consciente del espacio negativo.",
-    cover: null,
+    cover: "images/portada3.png",
     tags: ["Composición", "Espacio"],
     body: [
       { type: "p", text: "En música, el silencio entre las notas es tan importante como las notas mismas. En diseño, pasa exactamente lo mismo. El espacio que dejás vacío no es desperdicio — es oxígeno para la composición." },
@@ -617,7 +632,7 @@ const BLOG_POSTS = [
     date: "01 — 2026",
     title: "Apuntes sobre tipografía y emoción",
     excerpt: "La tipografía comunica antes de ser leída. El impacto emocional de las decisiones tipográficas.",
-    cover: null,
+    cover: "images/portada4.png",
     tags: ["Tipografía", "Emoción"],
     body: [
       { type: "p", text: "Antes de leer una sola palabra, la tipografía ya comunicó algo. El peso, el espaciado, la forma de las letras — todo transmite una emoción que precede al contenido." },
@@ -664,7 +679,7 @@ function Home() {
       <div className="home-label reveal">"Manifesto"</div>
       <div className="home-poem reveal r1">
         {POEM.map((p, i) => <p key={i}>{p}</p>)}
-        <div className="home-credit">— Texto encontrado en creativeliving</div>
+        <div className="home-credit">— No tienes que sufrir un caos continuo para poder crecer.</div>
       </div>
     </div>
   );
@@ -843,18 +858,24 @@ function Work() {
     <div className="pg">
       <div className="wrap-wide">
         <div className="pg-head reveal">
-          <h2>Trabajo</h2>
+          <h2>Portfolio</h2>
           <span className="tag">Proyectos seleccionados</span>
         </div>
-        <div className="work-grid reveal r1">
+        <div className="portfolio-grid reveal r1">
           {projects.map((p, i) => (
-            <div key={i} className="work-card" onClick={() => setSelected(p)}>
-              <div className="work-card-num">{String(i + 1).padStart(2, "0")}</div>
-              <div className="work-card-bottom">
-                <div className="work-card-cat">{p.cat}</div>
-                <div className="work-card-title">{p.title}</div>
+            <div key={i} className="portfolio-item" onClick={() => setSelected(p)}>
+              <div className="portfolio-cover">
+                {p.cover ? (
+                  <img src={p.cover} alt={p.title} />
+                ) : (
+                  <div className="portfolio-cover-placeholder">Portada</div>
+                )}
               </div>
-              <div className="work-card-arrow">↗</div>
+              <div className="portfolio-item-body">
+                <div className="portfolio-date">{String(i + 1).padStart(2, "0")}</div>
+                <div className="portfolio-title">{p.title}</div>
+                <div className="portfolio-excerpt">{p.cat}</div>
+              </div>
             </div>
           ))}
         </div>
@@ -1045,7 +1066,7 @@ export default function App() {
           {page === "Inicio" && <Home />}
           {page === "Blog" && <Blog postId={blogPost} onOpenPost={openPost} onBack={backToBlog} />}
           {page === "Sobre Mí" && <About />}
-          {page === "Trabajo" && <Work />}
+          {page === "Portfolio" && <Work />}
           {page === "Contacto" && <Contact />}
           {page === "__legal" && <LegalPage pageKey={legalPage} onBack={backFromLegal} />}
         </div>
