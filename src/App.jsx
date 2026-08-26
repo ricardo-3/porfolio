@@ -103,10 +103,27 @@ html,body{margin:0 !important;padding:0 !important;overflow-x:hidden !important;
   border:1.5px solid var(--border);
   background:transparent;color:var(--t1);
   cursor:pointer;display:flex;align-items:center;
-  justify-content:center;font-size:11px;
+  justify-content:center;position:relative;
   transition:border-color .2s;line-height:1;
 }
+.theme-dot svg{width:14px;height:14px;display:block;position:relative;z-index:1}
 .theme-dot:hover{border-color:var(--t2)}
+
+.theme-dot-pulse{
+  position:absolute;inset:0;border-radius:50%;
+  border:1px solid var(--t1);
+  opacity:0;pointer-events:none;
+  animation:themePulse 2.6s ease-out infinite;
+}
+.theme-dot:hover .theme-dot-pulse{animation-play-state:paused}
+@keyframes themePulse{
+  0%{transform:scale(0.55);opacity:.45}
+  70%{transform:scale(1.55);opacity:0}
+  100%{transform:scale(1.55);opacity:0}
+}
+@media (prefers-reduced-motion: reduce){
+  .theme-dot-pulse{animation:none;display:none}
+}
 
 /* ── Mobile nav ── */
 .mob-btn{
@@ -1014,7 +1031,7 @@ function LegalPage({ pageKey, onBack }) {
 
 export default function App() {
   const [page, setPage] = useState("Inicio");
-  const [theme, setTheme] = useState("light");
+  const [theme, setTheme] = useState("dark");
   const [mob, setMob] = useState(false);
   const [blogPost, setBlogPost] = useState(null);
   const [legalPage, setLegalPage] = useState(null);
@@ -1071,8 +1088,30 @@ export default function App() {
               ))}
             </div>
             <div className="nav-right">
-              <button className="theme-dot" onClick={() => setTheme(t => t === "light" ? "dark" : "light")}>
-                {theme === "light" ? "●" : "○"}
+              <button
+                className="theme-dot"
+                onClick={() => setTheme(t => t === "light" ? "dark" : "light")}
+                aria-label={theme === "light" ? "Cambiar a modo oscuro" : "Cambiar a modo claro"}
+                title={theme === "light" ? "Modo oscuro" : "Modo claro"}
+              >
+                <span className="theme-dot-pulse" />
+                {theme === "light" ? (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="4.2" />
+                    <line x1="12" y1="1.5" x2="12" y2="4" />
+                    <line x1="12" y1="20" x2="12" y2="22.5" />
+                    <line x1="1.5" y1="12" x2="4" y2="12" />
+                    <line x1="20" y1="12" x2="22.5" y2="12" />
+                    <line x1="4.4" y1="4.4" x2="6.1" y2="6.1" />
+                    <line x1="17.9" y1="17.9" x2="19.6" y2="19.6" />
+                    <line x1="4.4" y1="19.6" x2="6.1" y2="17.9" />
+                    <line x1="17.9" y1="6.1" x2="19.6" y2="4.4" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 1020.354 15.354z" />
+                  </svg>
+                )}
               </button>
               <button className={`mob-btn${mob ? " open" : ""}`} onClick={() => setMob(v => !v)}>
                 <span /><span /><span />
