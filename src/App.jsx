@@ -337,6 +337,14 @@ html,body{margin:0 !important;padding:0 !important;overflow-x:hidden !important;
   transition:color .2s,border-color .2s;
 }
 .post-sources a:hover{color:var(--t1);border-bottom-color:var(--t1)}
+.post-body a{
+  color:var(--t1);text-decoration:none;
+  border-bottom:1px solid var(--border);
+  transition:border-color .2s;
+}
+.post-body a:hover{border-bottom-color:var(--t1)}
+.post-body em{font-style:italic}
+.post-body strong{color:var(--t1);font-weight:500}
 .post-meta-read{
   font-size:11px;font-weight:400;letter-spacing:.08em;
   text-transform:uppercase;color:var(--t2);
@@ -623,34 +631,126 @@ const POEM = [
 
 /*
  * ╔══════════════════════════════════════════════════════════════╗
- * ║  BLOG POSTS — TEMPLATE REUTILIZABLE                        ║
+ * ║  BLOG — LOS POSTS VIVEN EN src/posts/                       ║
  * ║                                                             ║
- * ║  Para agregar un nuevo post:                                ║
- * ║  1. Copiá un objeto del array BLOG_POSTS                   ║
- * ║  2. Cambiá: id, date, title, excerpt, tags, body           ║
- * ║  3. En "cover" poné la URL de tu imagen o dejá null        ║
- * ║  4. Listo — aparece automáticamente en el blog             ║
+ * ║  Cada post es un archivo .md dentro de src/posts/.          ║
+ * ║  No hay ninguna lista para actualizar: si el archivo está   ║
+ * ║  en esa carpeta, aparece solo en el blog, ordenado por      ║
+ * ║  fecha (más nuevo primero).                                 ║
  * ║                                                             ║
- * ║  Para la imagen de portada:                                 ║
- * ║  - Recomendado: 1600x900px (ratio 16:9)                    ║
- * ║  - Guardala en public/images/ y usá imagePath("archivo")   ║
- * ║  - Si cover es null muestra el placeholder                  ║
+ * ║  Para publicar: subí el .md a src/posts/ y la portada a     ║
+ * ║  public/images/. Nada de este archivo hay que tocar.        ║
  * ║                                                             ║
- * ║  TIPOS DE BLOQUE disponibles dentro de "body":              ║
- * ║  { type: "p",     text: "un párrafo normal" }               ║
- * ║  { type: "h",     text: "un subtítulo de sección" }         ║
- * ║  { type: "quote", text: "una cita destacada" }              ║
- * ║  { type: "list",  ordered: true, items: ["uno","dos"] }     ║
- * ║        → ordered: true = 1,2,3 · ordered: false = viñetas   ║
- * ║        → si un ítem empieza con "Palabra:" esa palabra      ║
- * ║          se resalta automáticamente                         ║
- * ║  { type: "sources", items: [{ label:"Nombre", url:"..." }]} ║
- * ║        → se muestra al final como lista de fuentes          ║
- * ║                                                             ║
- * ║  El TIEMPO DE LECTURA se calcula solo (ver readingTime).    ║
- * ║  No hay que escribirlo a mano en ningún post.               ║
+ * ║  El formato del .md está explicado en INSTRUCCIONES-IA.md   ║
+ * ║  (en la raíz del repo).                                     ║
  * ╚══════════════════════════════════════════════════════════════╝
  */
+
+/* Vite lee todos los .md de la carpeta al compilar */
+const POST_FILES = import.meta.glob("./posts/*.md", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+});
+
+/* Separa los datos de arriba (entre ---) del texto del post */
+function parseFrontmatter(raw) {
+  const text = raw.replace(/^\uFEFF/, "").trim();
+  const meta = {};
+  if (!text.startsWith("---")) return { meta, body: text };
+  const close = text.indexOf("\n---", 3);
+  if (close === -1) return { meta, body: text };
+  text.slice(3, close).split(/\r?\n/).forEach((line) => {
+    const i = line.indexOf(":");
+    if (i === -1) return;
+    const key = line.slice(0, i).trim();
+    let value = line.slice(i + 1).trim();
+    value = value.replace(/^["']|["']$/g, "");
+    if (key) meta[key] = value;
+  });
+  return { meta, body: text.slice(close + 4).trim() };
+}
+
+/* Convierte el markdown en bloques que el sitio sabe dibujar */
+function parseMarkdown(md) {
+  const blocks = [];
+  let paragraph = [];
+  let list = null;
+  let ordered = false;
+  let sourcesMode = false;
+
+  const flushParagraph = () => {
+    if (paragraph.length) {
+      blocks.push({ type: "p", text: paragraph.join(" ") });
+      paragraph = [];
+    }
+  };
+  const flushList = () => {
+    if (!list) return;
+    if (sourcesMode) {
+      const items = list
+        .map((item) => {
+          const m = item.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+          return m ? { label: m[1], url: m[2] } : null;
+        })
+        .filter(Boolean);
+      if (items.length) blocks.push({ type: "sources", items });
+    } else {
+      blocks.push({ type: "list", ordered, items: list });
+    }
+    list = null;
+  };
+
+  md.split(/\r?\n/).forEach((rawLine) => {
+    const line = rawLine.trim();
+
+    if (!line) {
+      flushParagraph();
+      flushList();
+      return;
+    }
+    if (/^#{1,6}\s+/.test(line)) {
+      flushParagraph();
+      flushList();
+      const title = line.replace(/^#{1,6}\s+/, "");
+      if (/^fuentes$/i.test(title)) {
+        sourcesMode = true;
+      } else {
+        sourcesMode = false;
+        blocks.push({ type: "h", text: title });
+      }
+      return;
+    }
+    if (/^>\s?/.test(line)) {
+      flushParagraph();
+      flushList();
+      blocks.push({ type: "quote", text: line.replace(/^>\s?/, "") });
+      return;
+    }
+    if (/^\d+[.)]\s+/.test(line)) {
+      flushParagraph();
+      if (list && !ordered) flushList();
+      ordered = true;
+      list = list || [];
+      list.push(line.replace(/^\d+[.)]\s+/, ""));
+      return;
+    }
+    if (/^[-*+]\s+/.test(line)) {
+      flushParagraph();
+      if (list && ordered) flushList();
+      ordered = false;
+      list = list || [];
+      list.push(line.replace(/^[-*+]\s+/, ""));
+      return;
+    }
+    flushList();
+    paragraph.push(line);
+  });
+
+  flushParagraph();
+  flushList();
+  return blocks;
+}
 
 /* Tiempo estimado de lectura, estilo Medium: cuenta las palabras
    del post y las divide por la velocidad de lectura promedio.
@@ -661,213 +761,37 @@ function readingTime(post) {
   const words = (post.body || []).reduce((total, block) => {
     if (block.type === "sources") return total;
     const text = block.type === "list" ? (block.items || []).join(" ") : block.text || "";
-    return total + String(text).trim().split(/\s+/).filter(Boolean).length;
+    return total + String(text).replace(/[*_[\]()]/g, " ").trim().split(/\s+/).filter(Boolean).length;
   }, 0);
   return Math.max(1, Math.round(words / WORDS_PER_MINUTE));
 }
 
-const BLOG_POSTS = [
-  {
-    id: "letra-elitista-tiktok-shop",
-    date: "09 — 2026",
-    title: "De la letra elitista a TikTok Shop: la evolución del mensaje que no necesita ser pensado",
-    excerpt: "De la escritura cuneiforme al botón de compra: cómo las interfaces dejaron de pedirnos que interpretemos la información y empezaron a interpretarla por nosotros.",
-    cover: imagePath("blog-cover-6.jpg"), // ← guardá la imagen en public/images/blog-cover-6.jpg
-    tags: ["Interfaces", "Historia del Diseño", "Comunicación"],
-    body: [
-      { type: "p", text: "Durante gran parte de la historia, acceder a la información significó pertenecer a un círculo capaz de interpretarla." },
-      { type: "p", text: "La escritura fue una de las primeras tecnologías eficientes para conservar información fuera de la memoria humana. Permitió registrar cantidades, acontecimientos, leyes, sonidos e ideas mediante símbolos. Pero su existencia no garantizaba que la información fuera accesible: para comprenderla había que conocer su código." },
-      { type: "p", text: "Leer y escribir exigía aprendizaje, tiempo y acceso a instituciones que durante siglos estuvieron reservadas para determinados grupos sociales. Escribas, sacerdotes, administradores, comerciantes y miembros de las clases dominantes podían producir y descifrar información que el resto de la población no estaba en condiciones de interpretar directamente." },
-      { type: "quote", text: "La escritura no solo permitió conservar conocimiento. También permitió administrarlo." },
-      { type: "p", text: "Los primeros sistemas conocidos aparecieron en Mesopotamia hacia el 3200 a. C. y estuvieron ligados al registro económico y administrativo. Antes de servir para la literatura, la escritura sirvió para contabilizar bienes, organizar intercambios y controlar recursos. Denise Schmandt-Besserat estudió esta evolución desde antiguos sistemas de fichas contables hasta la escritura cuneiforme." },
-      { type: "p", text: "Más adelante, los alfabetos fenicio, griego y romano facilitaron la representación de sonidos y ampliaron las posibilidades del lenguaje escrito. Sin embargo, la información continuaba detrás de una interfaz que no todos sabían utilizar." },
-      { type: "quote", text: "La dificultad no estaba necesariamente en el contenido. Estaba en el acceso al código." },
+/* Para ordenar: "09 — 2026" se convierte en 202609 */
+function dateWeight(date) {
+  const m = String(date || "").match(/(\d{1,2})\D+(\d{4})/);
+  return m ? Number(m[2]) * 100 + Number(m[1]) : 0;
+}
 
-      { type: "h", text: "La necesidad de una interfaz más accesible" },
-      { type: "p", text: "Toda interfaz establece una relación entre una información y alguien que necesita interpretarla." },
-      { type: "p", text: "La escritura funcionaba con eficiencia para quienes habían aprendido su sistema. Para los demás, los signos permanecían cerrados. Por eso la comunicación nunca dependió únicamente del texto: imágenes religiosas, símbolos políticos, vestimentas, escudos, monumentos, colores y representaciones teatrales permitían transmitir significados a personas que no sabían leer." },
-      { type: "p", text: "La imagen ofrecía algo que el texto no podía garantizar: la posibilidad de producir una primera interpretación antes de conocer el código completo." },
-      { type: "p", text: "Una persona podía no comprender una inscripción, pero reconocer una figura sagrada. Podía no leer el nombre de una autoridad, pero identificar sus colores y sus emblemas. Podía desconocer una narración escrita y, sin embargo, comprender un conflicto representado mediante cuerpos, gestos, música y escenografía." },
-      { type: "p", text: "Esta necesidad de hacer perceptible una idea compleja llevó a integrar diferentes lenguajes dentro de una misma experiencia. Uno de los antecedentes modernos más importantes de esa integración apareció en la ópera." },
+const BLOG_POSTS = Object.entries(POST_FILES)
+  .map(([path, raw]) => {
+    const { meta, body } = parseFrontmatter(raw);
+    const blocks = parseMarkdown(body);
+    const firstParagraph = blocks.find((b) => b.type === "p");
+    const cover = meta.cover
+      ? (/^https?:\/\//.test(meta.cover) ? meta.cover : imagePath(meta.cover))
+      : null;
+    return {
+      id: path.split("/").pop().replace(/\.md$/, ""),
+      title: meta.title || "Sin título",
+      date: meta.date || "",
+      excerpt: meta.excerpt || (firstParagraph ? firstParagraph.text.slice(0, 160) : ""),
+      tags: meta.tags ? meta.tags.split(",").map((t) => t.trim()).filter(Boolean) : [],
+      cover,
+      body: blocks,
+    };
+  })
+  .sort((a, b) => dateWeight(b.date) - dateWeight(a.date));
 
-      { type: "h", text: "La ópera como sistema de composición total" },
-      { type: "p", text: "En el siglo XIX, Richard Wagner formuló la idea de Gesamtkunstwerk: la “obra de arte total”." },
-      { type: "p", text: "Su propuesta consistía en dejar de pensar la música, la poesía, el teatro, la actuación, la escenografía y el movimiento como elementos independientes. Todos debían participar de una misma composición y conducir hacia una misma experiencia." },
-      { type: "p", text: "Wagner desarrolló esta idea en La obra de arte del futuro, publicada en 1849. En ella propuso una unión entre música, canto, danza, poesía, teatro y artes visuales. El objetivo no era simplemente colocar varias disciplinas dentro de una obra, sino hacer que cada una cumpliera una función dentro de un sistema común." },
-      { type: "p", text: "La música aportaba emoción y ritmo. La poesía organizaba el relato. Los actores encarnaban el conflicto. La escenografía construía el mundo visual. La iluminación dirigía la atención. El espacio teatral separaba al espectador de la realidad cotidiana y lo introducía en otra." },
-      { type: "p", text: "La ópera podía comunicar de forma simultánea a través del oído, la vista, el cuerpo y la emoción. El espectador no necesitaba reconstruir toda la experiencia mediante la lectura: la obra se presentaba ante él ya compuesta. Cada elemento indicaba cómo debía ser interpretado el siguiente." },
-      { type: "p", text: "Así apareció un modelo fundamental para las interfaces posteriores: una información compleja podía dividirse en diferentes estímulos, organizarse jerárquicamente y recomponerse como una experiencia aparentemente unitaria. La persona no recibía elementos aislados. Recibía un recorrido." },
-
-      { type: "h", text: "Del escenario a la ciudad" },
-      { type: "p", text: "El principio de la obra total no quedó limitado a la ópera. A finales del siglo XIX, el Art Nouveau retomó la búsqueda de una unidad entre las artes. Arquitectura, mobiliario, ilustración, tipografía, indumentaria, objetos decorativos y espacios públicos comenzaron a compartir un mismo lenguaje." },
-      { type: "p", text: "El Metropolitan Museum of Art explica que sus diseñadores buscaron sintetizar las bellas artes y las artes aplicadas mediante la creación de ambientes completos. El concepto de Gesamtkunstwerk se trasladó así desde la representación escénica hacia la vida cotidiana." },
-      { type: "p", text: "La composición ya no terminaba cuando bajaba el telón. Podía continuar en una casa, un comercio, una estación de metro, un mueble, una lámpara o una pieza gráfica. Las entradas del metro diseñadas por Hector Guimard, por ejemplo, no funcionaban solamente como señales: convertían el ingreso al sistema de transporte en parte de un lenguaje visual reconocible." },
-      { type: "quote", text: "Una estética comenzaba a comportarse como una interfaz." },
-      { type: "p", text: "Sus formas, líneas y repeticiones permitían reconocer que elementos diferentes pertenecían a un mismo universo. El usuario aprendía ese lenguaje mediante la exposición y la experiencia, aunque nadie le explicara formalmente sus reglas." },
-      { type: "p", text: "Este principio sería fundamental para el desarrollo posterior de la identidad visual y del branding: ya no bastaba con colocar un nombre sobre un producto. Había que construir un sistema coherente alrededor de él." },
-
-      { type: "h", text: "Jules Chéret y la síntesis del mensaje" },
-      { type: "p", text: "Dentro de este proceso, el cartel publicitario produjo un cambio decisivo." },
-      { type: "p", text: "Hasta entonces, gran parte de la información pública seguía dependiendo de la palabra escrita. Los anuncios podían contener extensos bloques de texto que exigían detenerse, leer y comprender. Funcionaban para quienes conocían la interfaz de la lectura, pero resultaban menos eficaces dentro de una ciudad cada vez más rápida, saturada y poblada." },
-      { type: "p", text: "Jules Chéret comprendió que el cartel necesitaba otro recorrido. En 1866 popularizó una técnica de litografía en color que marcó el nacimiento del cartel publicitario moderno. Su innovación no se redujo al uso del color: consistió en organizar la información para que pudiera ser percibida antes de ser leída." },
-      { type: "p", text: "La composición proponía tres momentos:" },
-      { type: "list", ordered: true, items: [
-        "Atención: una figura expresiva, el movimiento y el contraste producen una reacción inmediata.",
-        "Identificación: el nombre, el espectáculo o el producto se integran dentro de esa escena.",
-        "Información: los datos secundarios quedan disponibles para quien decide detenerse.",
-      ] },
-      { type: "p", text: "El orden es lo verdaderamente importante. En un anuncio basado en texto, la persona debía comenzar por el código: reconocer las letras, formar palabras y reconstruir el significado. En el cartel de Chéret, la persona comenzaba por la emoción y la imagen. Primero comprendía que algo era alegre, deseable, elegante o divertido. Después descubría qué se anunciaba." },
-      { type: "p", text: "La síntesis visual reemplazaba una parte de la decodificación. Una persona que no estaba habituada a leer información comercial recibió de pronto una interfaz diferente. No necesitaba conocer previamente todas sus reglas porque la propia composición le enseñaba dónde mirar: primero la figura, luego el nombre y finalmente los datos." },
-      { type: "p", text: "La jerarquía visual funcionaba como una guía. El cartel no eliminó el texto: lo subordinó a una estructura perceptiva capaz de comunicar incluso cuando el espectador no completaba la lectura." },
-      { type: "p", text: "De este modo, la publicidad alcanzó a un público más amplio. La información dejó de estar encerrada únicamente en la alfabetización escrita y comenzó a circular mediante asociaciones visuales compartidas. No era necesario leer todo para recibir el mensaje." },
-
-      { type: "h", text: "Aprender una interfaz sin que nadie la enseñe" },
-      { type: "p", text: "El cartel también hizo algo más profundo: enseñó a las personas una nueva forma de mirar." },
-      { type: "p", text: "Al principio, aquella combinación de cuerpos de gran escala, colores intensos, tipografía y movimiento debió constituir una interfaz novedosa. Sin embargo, su repetición en las calles permitió que el público aprendiera rápidamente su funcionamiento." },
-      { type: "p", text: "No hacía falta un manual. La ubicación y el tamaño indicaban qué era importante. La figura generaba una emoción. El nombre permitía reconocer el evento o producto. Los elementos menores ofrecían detalles adicionales." },
-      { type: "p", text: "La composición distribuía la información de acuerdo con la velocidad de la mirada. Con el tiempo, este recorrido se naturalizó: las personas dejaron de percibirlo como un sistema construido y comenzaron a experimentarlo como una forma evidente de comunicación." },
-      { type: "quote", text: "Este es uno de los mayores logros de una interfaz: desaparecer como sistema y hacer que su interpretación parezca natural." },
-
-      { type: "h", text: "Del cartel al retail moderno" },
-      { type: "p", text: "Las tiendas contemporáneas de Nike, Adidas o Apple continúan aplicando esta estructura." },
-      { type: "p", text: "Una pantalla de gran tamaño o una imagen de campaña produce el primer impacto. El producto aparece aislado, iluminado y presentado como objeto de deseo. La información técnica ocupa un lugar secundario. La arquitectura, los materiales, la música y la circulación completan el mensaje." },
-      { type: "p", text: "El patrón de Chéret se expande desde la superficie del cartel hacia el espacio físico:" },
-      { type: "list", ordered: false, items: [
-        "La campaña captura la atención.",
-        "El producto establece la identificación.",
-        "Las etiquetas y pantallas aportan la información.",
-        "La distribución del espacio conduce hacia la acción.",
-      ] },
-      { type: "p", text: "Al mismo tiempo, la tienda recupera el principio del Gesamtkunstwerk. Todos sus elementos participan de una identidad común. El consumidor no observa la marca desde afuera: entra en su universo." },
-      { type: "p", text: "La tienda se convierte en una obra total orientada al consumo. No necesita explicar mediante un texto que la marca es innovadora, deportiva, exclusiva o tecnológica: construye un espacio donde esa interpretación ya está contenida en los materiales, las imágenes y los objetos." },
-      { type: "quote", text: "La estética realiza el argumento." },
-
-      { type: "h", text: "Garmin: cuando la interfaz interpreta antes que el usuario" },
-      { type: "p", text: "Esta lógica también aparece en productos que no pertenecen directamente a la publicidad." },
-      { type: "p", text: "Un reloj Garmin funciona aunque la persona no sepa correr, no comprenda la fisiología del entrenamiento o se encuentre en mal estado físico. El sistema no exige esos conocimientos porque los reemplaza por una interfaz." },
-      { type: "p", text: "El dispositivo recoge información sobre frecuencia cardíaca, sueño, estrés, actividad y recuperación. Después sintetiza esos datos mediante colores, gráficos, números y recomendaciones. La función Body Battery, por ejemplo, combina diferentes señales para producir una estimación de la energía corporal." },
-      { type: "p", text: "La persona no necesita interpretar todos los datos originales. La interfaz ya lo hizo." },
-      { type: "p", text: "El usuario recibe el resultado de un proceso que no conoce por completo: energía alta, estrés elevado, mala recuperación o preparación para entrenar. A partir de esa síntesis toma una decisión. Garmin no le enseña necesariamente a comprender su cuerpo: le ofrece una interpretación lista para utilizar." },
-      { type: "p", text: "El mecanismo es similar al del cartel. Una gran cantidad de información queda reducida a una jerarquía comprensible: primero aparece el estado general y después, si el usuario lo desea, puede acceder a los datos secundarios. La interfaz ocupa el lugar que antes correspondía al conocimiento especializado." },
-
-      { type: "h", text: "TikTok Shop: la obra total dentro de una pantalla" },
-      { type: "p", text: "TikTok Shop reúne todos estos sistemas dentro de una sola interfaz." },
-      { type: "p", text: "Del cartel recupera la captura inmediata de la atención. Del Gesamtkunstwerk, la integración de diferentes lenguajes. Del retail, la construcción de una atmósfera de marca. De dispositivos como Garmin, la capacidad de procesar información y ofrecer una acción ya interpretada." },
-      { type: "p", text: "El video integra cuerpo, música, voz, texto, montaje, movimiento, sonido y producto. La plataforma suma comentarios, reacciones, recomendaciones algorítmicas y una herramienta de compra. La composición vuelve a repetirse:" },
-      { type: "list", ordered: true, items: [
-        "Atención: el movimiento, el sonido o una imagen detienen el desplazamiento.",
-        "Identificación: el producto aparece integrado en la acción.",
-        "Información: el creador explica o demuestra sus beneficios.",
-        "Validación: otros usuarios comentan, reaccionan y comparten.",
-        "Acción: el botón de compra aparece dentro de la misma experiencia.",
-      ] },
-      { type: "p", text: "El contenido UGC resulta especialmente eficaz porque la publicidad adopta la forma de una experiencia personal. El producto no parece presentado por una empresa, sino utilizado y recomendado por una persona común." },
-      { type: "p", text: "El usuario no debe imaginar cómo funciona: lo ve funcionando. No debe imaginar cómo se sentiría: el creador representa esa sensación. No debe buscar validación externa: los comentarios aparecen en la misma pantalla. No debe recordar el producto para comprarlo después: la transacción está integrada al estímulo." },
-      { type: "p", text: "Una investigación sobre social commerce y contenido en video señala que las emociones, la presencia social y la información disponible influyen en la intención de compra. La eficacia no se encuentra únicamente en cada elemento, sino en la manera en que todos se combinan dentro de un mismo recorrido." },
-      { type: "p", text: "TikTok Shop es una forma contemporánea de obra total, pero construida para la conversión. La música, la actuación, la demostración, la identidad visual, la validación colectiva y el comercio ocurren dentro del mismo escenario: la pantalla del teléfono." },
-
-      { type: "h", text: "De interpretar el mensaje a recibirlo interpretado" },
-      { type: "p", text: "La evolución de estas interfaces no eliminó la información. Eliminó progresivamente la necesidad de que el usuario la organizara por sí mismo." },
-      { type: "p", text: "La escritura exigía conocer un código reservado históricamente a determinados círculos sociales. La ópera integró distintos lenguajes para producir una experiencia comprensible mediante varios sentidos. El Gesamtkunstwerk trasladó esa unidad hacia los objetos y los espacios. El Art Nouveau convirtió esa integración en un lenguaje visual. Chéret sintetizó la información comercial mediante un recorrido de atención, identificación e información. El retail transformó ese recorrido en un ambiente. Garmin convirtió datos complejos en una recomendación. TikTok Shop integró el estímulo y la compra dentro del mismo movimiento." },
-      { type: "p", text: "Cada interfaz redujo la distancia entre la información y la acción. Pero también redujo la cantidad de operaciones que el usuario debía realizar para construir su propia interpretación." },
-      { type: "p", text: "La interfaz selecciona lo importante, establece un orden, produce una emoción y sugiere una respuesta. No le enseña necesariamente a la persona a elegir a partir de una comprensión completa: le presenta una realidad ya sintetizada para que pueda actuar dentro de ella." },
-      { type: "p", text: "Primero fue necesario pertenecer a un círculo capaz de leer. Después, la imagen permitió comprender sin dominar aquel código. Finalmente, las interfaces comenzaron a interpretar la información antes que nosotros." },
-      { type: "quote", text: "Ya no solo vemos y creemos. Vemos aquello que el sistema decidió mostrarnos, lo comprendemos mediante el recorrido que diseñó y actuamos antes de preguntarnos cómo se construyó esa decisión." },
-      { type: "sources", items: [
-        { label: "Universidad de Texas — Del registro contable a la escritura (Denise Schmandt-Besserat)", url: "https://sites.utexas.edu/dsb/tokens/from-accounting-to-writing/" },
-        { label: "The Metropolitan Museum of Art — Art Nouveau", url: "https://www.metmuseum.org/essays/art-nouveau" },
-        { label: "The Metropolitan Museum of Art — Cronología: el cartel a color y Jules Chéret", url: "https://www.metmuseum.org/toah/ht/10/euwf.html" },
-        { label: "Garmin — Documentación de Body Battery", url: "https://www8.garmin.com/manuals/webhelp/forerunner245/EN-US/GUID-87E1392B-2C55-40B7-A1FF-3AB9252DA2A0.html" },
-        { label: "PMC — Social commerce, contenido en video e intención de compra", url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC11428252/" },
-      ] },
-    ],
-  },
-  {
-    id: "casco-percepcion-conciencia-sistemica",
-    date: "08 — 2026",
-    title: "Casco de la Percepción: De la Ilusión Evolutiva a la Conciencia Sistémica en UX y la Vida",
-    excerpt: "Por qué la percepción humana no es una ventana a la verdad sino una interfaz optimizada para sobrevivir — y qué tiene esto que ver con el diseño de experiencias.",
-    cover: imagePath("blog-cover-5.jpg"), // ← guardá la imagen en public/images/blog-cover-5.jpg
-    tags: ["Percepción", "UX/UI"],
-    body: [
-      { type: "p", text: "Imaginá por un segundo que mirás la pantalla de tu computadora. Ves el ícono de un archivo en forma de carpeta amarilla y sabés intuitivamente qué hacer con él: arrastrarlo, abrirlo o borrarlo. Sin embargo, en el mundo físico real ese ícono no existe — lo que realmente hay dentro de tu dispositivo son transistores, señales eléctricas, transiciones de código binario y voltajes dentro de un disco de estado sólido." },
-      { type: "p", text: "Si la computadora te obligara a interactuar directamente con esos millones de datos brutos para enviar un correo, colapsarías en segundos. La pantalla es una interfaz de usuario: una ilusión simplificada construida específicamente para ocultar la complejidad de la realidad objetiva y permitirte actuar." },
-      { type: "p", text: "Esta misma metáfora es la que el científico cognitivo Donald Hoffman utiliza para explicar cómo funciona la percepción humana. A través de su Teoría de la Interfaz de la Percepción, Hoffman sostiene que nuestros sentidos no evolucionaron para mostrarnos la 'verdad' del universo, sino para proyectarnos una pantalla con 'íconos' — espacio, tiempo, formas, colores — optimizados para nuestra supervivencia." },
-      { type: "p", text: "El truco del escarabajo joya ilustra bien este principio, y también lo que pasa cuando el algoritmo biológico falla. Los machos del escarabajo joya australiano (Julodimorpha bakewelli) buscan hembras guiándose por un algoritmo perceptual muy simple: buscar objetos marrones, brillantes y con textura de hoyuelos." },
-      { type: "p", text: "Durante años ese atajo funcionó a la perfección. Pero cuando los humanos empezaron a tirar botellas de cerveza vacías con ese mismo tono marrón y esa textura en el desierto, los machos intentaron aparearse masivamente con las botellas, ignorando a las hembras reales, hasta poner a la especie al borde de la extinción." },
-      { type: "quote", text: "El escarabajo no ve una hembra; ve un patrón visual simplificado. Su interfaz biológica carece de la conciencia necesaria para cuestionar el estímulo — está atrapado en un bucle de reacción automática." },
-      { type: "p", text: "Si analizamos esto únicamente desde un enfoque neodarwinista tradicional caemos en un reduccionismo: la percepción sería solo una herramienta de supervivencia biológica orientada a pasar genes a la siguiente generación. Pero la historia humana demuestra que esto es insuficiente — si dependiéramos únicamente de la lenta mutación genética nos habríamos estancado. ¿Por qué la humanidad pasó milenios sin grandes cambios y de pronto dio un salto cultural, tecnológico y ético exponencial en el último siglo?" },
-      { type: "p", text: "Ahí se vuelve fundamental integrar la Teoría General de Sistemas formulada por el biólogo Ludwig von Bertalanffy. Desde esta mirada, la mente y la percepción no son entes aislados sino sistemas abiertos en constante intercambio de información, energía y sentido con un suprasistema — el entorno socio-cultural y ecológico." },
-      { type: "p", text: "Procesar la realidad pura generaría un colapso entrópico en nuestra mente: la interfaz filtra la información para mantener el equilibrio del sistema, una especie de homeostasis cognitiva. Y al subir el nivel de conciencia, la humanidad aprendió a autorregularse — el progreso masivo de los últimos tiempos no respondió a un cambio biológico en nuestro ADN, sino a un cambio sistémico de conciencia: la capacidad de eliminar sesgos primarios (tribalismo, racismo, violencia) para trabajar en red de forma colaborativa." },
-      { type: "p", text: "Hoffman describe nuestra mente como si lleváramos puesto un casco de realidad virtual o aumentada biológico que jamás podemos quitarnos. En el diseño web, de videojuegos y de producto digital este principio se aplica de forma directa." },
-      { type: "p", text: "Al igual que el foveated rendering en los visores de RA/RV — que solo renderiza en alta definición la zona donde el ojo enfoca — las interfaces digitales deben guiar la atención hacia focos clave para evitar la sobrecarga cognitiva. El jugador o usuario no necesita procesar los algoritmos del servidor ni las llamadas a las APIs: una barra de vida o un botón de pago convierten procesos abstractos en ilusiones útiles. Una buena interfaz no obliga al usuario a pensar en la infraestructura subyacente — se adapta a sus patrones mentales para hacer fluida la interacción." },
-      { type: "p", text: "El escarabajo joya muere al lado de la botella porque no puede reflexionar sobre su propia interfaz. Los seres humanos, en cambio, tenemos una facultad única: la capacidad de tomar conciencia de nuestra propia capa de renderizado." },
-      { type: "quote", text: "Cuando actuamos impulsados por sesgos inconscientes, prejuicios o reacciones automáticas de miedo y agresión, nos comportamos exactamente como el escarabajo intentando aparearse con la botella de cerveza." },
-      { type: "p", text: "Evolucionar como especie — y como diseñadores de experiencias, tecnologías y sociedades — exige reconocer que lo que percibimos no es la totalidad de la verdad. Al elevar nuestro grado de conciencia dejamos de reaccionar como biomasas automáticas y empezamos a rediseñar activamente los íconos de nuestra interfaz, construyendo un sistema humano más empático, colaborativo y equilibrado." },
-      { type: "p", text: "Fuentes: Donald Hoffman, charla TED 'Do we see reality as it is?' (ted.com) y 'The Evolutionary Argument Against Reality' en Quanta Magazine · Gwynne & Rentz (1983), 'Beetles on the Bottle: Male Buprestids Mistake Stubbies for Females', el estudio original sobre el escarabajo joya · Ludwig von Bertalanffy y la Teoría General de Sistemas, vía Britannica y Stanford Encyclopedia of Philosophy." },
-    ],
-  },
-  {
-    id: "curiosidad-motor-creativo",
-    date: "04 — 2026",
-    title: "La curiosidad como motor creativo",
-    excerpt: "Reflexiones sobre por qué la curiosidad genuina produce mejor trabajo que la disciplina forzada.",
-    cover: imagePath("blog-cover-1.jpg"), // ← guarda la imagen en public/images/blog-cover-1.jpg
-    tags: ["Creatividad", "Proceso"],
-    body: [
-      { type: "p", text: "La curiosidad es el combustible más honesto del proceso creativo. No necesita justificación, no pide permiso, simplemente aparece y te empuja hacia algo que todavía no entendés del todo." },
-      { type: "p", text: "Cuando trabajamos desde la curiosidad genuina, el resultado siempre tiene algo que la disciplina sola no puede producir: tiene vida. Tiene esa cualidad invisible que hace que alguien se detenga un segundo más frente a lo que creaste." },
-      { type: "quote", text: "La disciplina te lleva al escritorio. La curiosidad te lleva a las preguntas correctas." },
-      { type: "p", text: "Esto no significa que la disciplina no importe — claro que importa. Pero la disciplina sin curiosidad produce trabajo correcto. La curiosidad sin disciplina produce caos interesante. La combinación de ambas produce trabajo que importa." },
-      { type: "p", text: "Mi práctica creativa cambió cuando dejé de preguntarme '¿qué debería hacer?' y empecé a preguntarme '¿qué me da curiosidad?'. Las respuestas fueron muy distintas, y el trabajo también." },
-    ],
-  },
-  {
-    id: "menos-decisiones-mas-intencion",
-    date: "03 — 2026",
-    title: "Menos decisiones, más intención",
-    excerpt: "Cómo simplificar el proceso de diseño eliminando lo innecesario y manteniendo solo lo que tiene propósito.",
-    cover: imagePath("portada2.png"),
-    tags: ["Diseño", "Minimalismo"],
-    body: [
-      { type: "p", text: "Cada decisión de diseño consume energía. Cada opción que dejás abierta es una pregunta sin resolver que te distrae de lo esencial. Simplificar no es quitar — es elegir con más intención." },
-      { type: "p", text: "Empecé a aplicar una regla simple: si no puedo explicar por qué algo está ahí en una frase, probablemente no debería estar. No es minimalismo por estética — es claridad por respeto al mensaje." },
-      { type: "quote", text: "Lo que quitás define tu trabajo tanto como lo que dejás." },
-      { type: "p", text: "El resultado es un proceso más lento al principio pero mucho más rápido después. Cuando cada elemento tiene una razón, las decisiones siguientes se toman solas." },
-    ],
-  },
-  {
-    id: "silencio-visual-composicion",
-    date: "02 — 2026",
-    title: "El silencio visual en la composición",
-    excerpt: "El espacio vacío no es ausencia — es una declaración. Notas sobre el uso consciente del espacio negativo.",
-    cover: imagePath("portada3.png"),
-    tags: ["Composición", "Espacio"],
-    body: [
-      { type: "p", text: "En música, el silencio entre las notas es tan importante como las notas mismas. En diseño, pasa exactamente lo mismo. El espacio que dejás vacío no es desperdicio — es oxígeno para la composición." },
-      { type: "p", text: "Tendemos a llenar porque el vacío nos incomoda. Pero el espacio negativo es lo que le da peso a lo que sí está. Sin pausa no hay ritmo, sin silencio no hay énfasis." },
-      { type: "quote", text: "El espacio vacío es la decisión más valiente que podés tomar en una composición." },
-      { type: "p", text: "Practicar el uso consciente del espacio es practicar la confianza en tu mensaje. Si lo que decís es fuerte, no necesita gritar. Necesita espacio para resonar." },
-    ],
-  },
-  {
-    id: "tipografia-emocion",
-    date: "01 — 2026",
-    title: "Apuntes sobre tipografía y emoción",
-    excerpt: "La tipografía comunica antes de ser leída. El impacto emocional de las decisiones tipográficas.",
-    cover: imagePath("portada4.png"),
-    tags: ["Tipografía", "Emoción"],
-    body: [
-      { type: "p", text: "Antes de leer una sola palabra, la tipografía ya comunicó algo. El peso, el espaciado, la forma de las letras — todo transmite una emoción que precede al contenido." },
-      { type: "p", text: "Elegir una tipografía es como elegir el tono de voz con el que vas a hablar. Podés decir exactamente lo mismo con una voz que tranquiliza o con una que confronta. La tipografía es esa voz." },
-      { type: "quote", text: "La tipografía es el vestido de las palabras. Y como todo vestido, dice algo antes de que abras la boca." },
-      { type: "p", text: "Mi proceso tipográfico es simple: primero siento, después elijo. Leo el texto en voz alta, entiendo su ritmo, y busco una familia que hable en la misma frecuencia." },
-    ],
-  },
-  // ── PARA AGREGAR MÁS POSTS ──
-  // Copiá cualquier post de arriba, pegalo acá, y cambiá los datos.
-  // Asegurate de que el "id" sea único (sin espacios, con guiones).
-];
 
 const LEGAL_PAGES = {
   terminos: {
@@ -942,13 +866,35 @@ function BlogList({ onOpenPost }) {
   );
 }
 
+/* Dibuja **negritas**, *itálicas* y [links](url) dentro de un texto */
+function Inline({ text }) {
+  const parts = [];
+  const re = /\[([^\]]+)\]\(([^)]+)\)|\*\*([^*]+)\*\*|\*([^*]+)\*/g;
+  let last = 0;
+  let key = 0;
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) parts.push(text.slice(last, m.index));
+    if (m[1]) {
+      parts.push(<a key={key++} href={m[2]} target="_blank" rel="noopener noreferrer">{m[1]}</a>);
+    } else if (m[3]) {
+      parts.push(<strong key={key++}>{m[3]}</strong>);
+    } else {
+      parts.push(<em key={key++}>{m[4]}</em>);
+    }
+    last = re.lastIndex;
+  }
+  if (last < text.length) parts.push(text.slice(last));
+  return <>{parts}</>;
+}
+
 /* Ítem de lista: si empieza con "Palabra:" resalta esa palabra */
 function PostListItem({ text }) {
   const i = text.indexOf(":");
   if (i > 0 && i < 24) {
-    return <li><strong>{text.slice(0, i)}</strong>{text.slice(i)}</li>;
+    return <li><strong>{text.slice(0, i)}</strong><Inline text={text.slice(i)} /></li>;
   }
-  return <li>{text}</li>;
+  return <li><Inline text={text} /></li>;
 }
 
 function BlogPost({ postId, onBack }) {
@@ -974,8 +920,8 @@ function BlogPost({ postId, onBack }) {
       </div>
       <div className="post-body">
         {post.body.map((block, i) => {
-          if (block.type === "quote") return <blockquote key={i}>{block.text}</blockquote>;
-          if (block.type === "h") return <h3 key={i}>{block.text}</h3>;
+          if (block.type === "quote") return <blockquote key={i}><Inline text={block.text} /></blockquote>;
+          if (block.type === "h") return <h3 key={i}><Inline text={block.text} /></h3>;
           if (block.type === "list") {
             const items = block.items.map((t, j) => <PostListItem key={j} text={t} />);
             return block.ordered ? <ol key={i}>{items}</ol> : <ul key={i}>{items}</ul>;
@@ -990,7 +936,7 @@ function BlogPost({ postId, onBack }) {
               </div>
             );
           }
-          return <p key={i}>{block.text}</p>;
+          return <p key={i}><Inline text={block.text} /></p>;
         })}
       </div>
       {post.tags && (
